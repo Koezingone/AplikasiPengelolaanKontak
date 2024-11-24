@@ -19,6 +19,8 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.sql.ResultSet;
+import java.sql.Statement;
 import javax.swing.DefaultListModel;
 import javax.swing.JOptionPane;
 import javax.swing.table.DefaultTableModel;
@@ -57,6 +59,25 @@ public class PengelolaanKontakFrame extends javax.swing.JFrame {
             alamatInput.setText(alamat);
             genderPilih.setSelectedItem(gender);
             kategoriPilih.setSelectedItem(kategori);
+        }
+    }
+});
+
+        btnClear.addActionListener(new java.awt.event.ActionListener() {
+        @Override
+        public void actionPerformed(java.awt.event.ActionEvent evt) {
+        btnClearActionPerformed(evt);
+    }
+});
+
+    kontakList.addListSelectionListener(e -> {
+    if (!e.getValueIsAdjusting()) {
+        String selectedCategory = kontakList.getSelectedValue();
+        System.out.println("Kategori yang dipilih: " + selectedCategory);  // Debug
+        if (selectedCategory != null) {
+            loadTableDataByCategory(selectedCategory); // Muat data berdasarkan kategori yang dipilih
+        } else {
+            loadTableData();  // Jika kategori tidak dipilih, tampilkan semua data
         }
     }
 });
@@ -102,6 +123,37 @@ public class PengelolaanKontakFrame extends javax.swing.JFrame {
     }
 }
 
+private void loadTableDataByCategory(String category) {
+     DefaultTableModel model = (DefaultTableModel) tblKontak.getModel();
+    model.setRowCount(0); // Reset tabel setiap kali memuat data baru
+
+    String sql = "SELECT nama, telepon, alamat, gender, kategori FROM kontak WHERE kategori = ?";
+    boolean dataFound = false; // Untuk memeriksa apakah data ditemukan
+    try (Connection conn = PengelolaanKontakHelper.connect();
+         PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        pstmt.setString(1, category); // Set kategori yang dipilih sebagai parameter
+        System.out.println("Kategori yang digunakan dalam query: " + category);  // Debugging log
+        try (ResultSet rs = pstmt.executeQuery()) {
+            while (rs.next()) {
+                model.addRow(new Object[]{
+                    rs.getString("nama"),
+                    rs.getString("telepon"),
+                    rs.getString("alamat"),
+                    rs.getString("gender"),
+                    rs.getString("kategori")
+                });
+                dataFound = true; // Menandakan ada data yang ditemukan
+            }
+        }
+    } catch (SQLException e) {
+        JOptionPane.showMessageDialog(this, "Gagal memuat data berdasarkan kategori: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+    }
+    
+    // Tampilkan pesan jika tidak ada data ditemukan
+    if (!dataFound) {
+        JOptionPane.showMessageDialog(this, "Kontak tidak ditemukan untuk kategori tersebut.", "Peringatan", JOptionPane.INFORMATION_MESSAGE);
+    }
+}
 
     
 
@@ -139,6 +191,8 @@ public class PengelolaanKontakFrame extends javax.swing.JFrame {
         kontakList = new javax.swing.JList<>();
         cariButton = new javax.swing.JButton();
         jLabel7 = new javax.swing.JLabel();
+        btnKeluar = new javax.swing.JButton();
+        btnClear = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -257,6 +311,22 @@ public class PengelolaanKontakFrame extends javax.swing.JFrame {
         jLabel7.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
         jLabel7.setText("DAFTAR KONTAK :");
 
+        btnKeluar.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
+        btnKeluar.setText("KELUAR");
+        btnKeluar.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnKeluarActionPerformed(evt);
+            }
+        });
+
+        btnClear.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
+        btnClear.setText("CLEAR");
+        btnClear.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnClearActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
         jPanel1Layout.setHorizontalGroup(
@@ -277,14 +347,17 @@ public class PengelolaanKontakFrame extends javax.swing.JFrame {
                         .addComponent(tambahButton)
                         .addGap(18, 18, 18)
                         .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                                .addComponent(nameInput, javax.swing.GroupLayout.PREFERRED_SIZE, 112, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                                    .addComponent(handphoneInput, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 112, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                    .addComponent(alamatInput, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 112, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                    .addComponent(genderPilih, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                    .addComponent(kategoriPilih, javax.swing.GroupLayout.PREFERRED_SIZE, 113, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                            .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 528, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                            .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 528, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addGroup(jPanel1Layout.createSequentialGroup()
+                                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                                    .addComponent(nameInput, javax.swing.GroupLayout.PREFERRED_SIZE, 112, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                    .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                                        .addComponent(handphoneInput, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 112, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                        .addComponent(alamatInput, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 112, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                        .addComponent(genderPilih, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                        .addComponent(kategoriPilih, javax.swing.GroupLayout.PREFERRED_SIZE, 113, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                .addComponent(jLabel6, javax.swing.GroupLayout.PREFERRED_SIZE, 37, javax.swing.GroupLayout.PREFERRED_SIZE))))
                     .addGroup(jPanel1Layout.createSequentialGroup()
                         .addGap(31, 31, 31)
                         .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -297,21 +370,26 @@ public class PengelolaanKontakFrame extends javax.swing.JFrame {
                         .addComponent(simpanButton)
                         .addGap(50, 50, 50)
                         .addComponent(hapusButton)))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(jPanel1Layout.createSequentialGroup()
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(jLabel6, javax.swing.GroupLayout.PREFERRED_SIZE, 37, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(18, 18, 18)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                         .addComponent(cariInput, javax.swing.GroupLayout.PREFERRED_SIZE, 132, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addGap(18, 18, 18)
-                        .addComponent(cariButton))
-                    .addGroup(jPanel1Layout.createSequentialGroup()
-                        .addGap(42, 42, 42)
+                        .addComponent(cariButton)
+                        .addGap(18, 18, 18)
+                        .addComponent(btnClear)
+                        .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 32, Short.MAX_VALUE)
                         .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(eksporButton)
-                            .addComponent(imporButton))))
-                .addContainerGap(24, Short.MAX_VALUE))
+                            .addGroup(jPanel1Layout.createSequentialGroup()
+                                .addComponent(imporButton)
+                                .addGap(303, 303, 303))
+                            .addGroup(jPanel1Layout.createSequentialGroup()
+                                .addComponent(eksporButton)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 129, Short.MAX_VALUE)
+                                .addComponent(btnKeluar)
+                                .addGap(99, 99, 99))))))
         );
         jPanel1Layout.setVerticalGroup(
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -322,7 +400,8 @@ public class PengelolaanKontakFrame extends javax.swing.JFrame {
                     .addComponent(nameInput, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jLabel6)
                     .addComponent(cariInput, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(cariButton))
+                    .addComponent(cariButton)
+                    .addComponent(btnClear))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabel2)
@@ -354,7 +433,9 @@ public class PengelolaanKontakFrame extends javax.swing.JFrame {
                     .addGroup(jPanel1Layout.createSequentialGroup()
                         .addComponent(imporButton)
                         .addGap(124, 124, 124)
-                        .addComponent(eksporButton))
+                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(eksporButton)
+                            .addComponent(btnKeluar)))
                     .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 170, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addGroup(jPanel1Layout.createSequentialGroup()
                         .addGap(16, 16, 16)
@@ -572,7 +653,7 @@ public class PengelolaanKontakFrame extends javax.swing.JFrame {
     if (selectedName != null) {  // Pastikan ada nama yang dipilih
         try (Connection conn = PengelolaanKontakHelper.connect()) {
             // Query untuk mengambil data berdasarkan nama
-            String query = "SELECT * FROM kontak WHERE nama = ?";
+            String query = "SELECT * FROM kontak WHERE kategori = ?";
             var ps = conn.prepareStatement(query);
             ps.setString(1, selectedName);  // Set nama yang dipilih sebagai parameter
             var rs = ps.executeQuery();
@@ -723,21 +804,33 @@ public class PengelolaanKontakFrame extends javax.swing.JFrame {
     
     }//GEN-LAST:event_imporButtonActionPerformed
 
+    private void btnKeluarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnKeluarActionPerformed
+    System.exit(0);
+    }//GEN-LAST:event_btnKeluarActionPerformed
+
+    private void btnClearActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnClearActionPerformed
+    // Hapus teks pada kolom pencarian
+    cariInput.setText("");
+
+    // Muat ulang data dari database tanpa filter pencarian
+    loadTableData();
+    }//GEN-LAST:event_btnClearActionPerformed
+
     private void loadKontakList() {
     DefaultListModel<String> listModel = new DefaultListModel<>();
-    String sql = "SELECT nama FROM kontak";  // Query untuk mengambil nama-nama kontak
+    String sql = "SELECT DISTINCT kategori FROM kontak";  // Query untuk mengambil kategori unik
     try (Connection conn = PengelolaanKontakHelper.connect();
          java.sql.Statement stmt = conn.createStatement();
          java.sql.ResultSet rs = stmt.executeQuery(sql)) {
 
         while (rs.next()) {
-            listModel.addElement(rs.getString("nama"));  // Menambahkan nama ke dalam model list
+            listModel.addElement(rs.getString("kategori"));  // Menambahkan kategori ke dalam model list
         }
 
         // Menghubungkan DefaultListModel ke kontakList
         kontakList.setModel(listModel);
     } catch (SQLException e) {
-        JOptionPane.showMessageDialog(this, "Gagal memuat data nama kontak: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        JOptionPane.showMessageDialog(this, "Gagal memuat data kategori: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
     }
     }
     /**
@@ -777,6 +870,8 @@ public class PengelolaanKontakFrame extends javax.swing.JFrame {
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JTextField alamatInput;
+    private javax.swing.JButton btnClear;
+    private javax.swing.JButton btnKeluar;
     private javax.swing.JButton cariButton;
     private javax.swing.JTextField cariInput;
     private javax.swing.JButton editButton;
